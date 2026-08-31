@@ -1,6 +1,7 @@
 package com.ivan.expensetracker;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Scanner;
 
@@ -11,6 +12,26 @@ public class Main {
         ExpenseService service = new ExpenseService();
         int option = -1;
         Scanner scan = new Scanner(System.in);
+
+        try (var connection = DatabaseConnection.getConnection()) {
+            System.out.println("Connected to PostgreSQL");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        ExpenseRepository repository = new ExpenseRepository();
+
+        try {
+//            System.out.println(repository.findById(100L));
+//            System.out.println(repository.findById(9999L));
+            boolean deleted = repository.deleteById(100L);
+            System.out.println(deleted);
+
+            System.out.println(repository.findAll());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
 
         while (option != 0) {
 
