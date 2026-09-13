@@ -1,7 +1,10 @@
 package com.ivan.expensetracker;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -9,87 +12,104 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class ExpenseServiceTest {
 
+    @Mock
+    private ExpenseRepository repository;
+
+    @InjectMocks
     private ExpenseService service;
 
-    @BeforeEach
-    void setUp() {
-        service = new ExpenseService();
-    }
 
     @Test
-    void shouldAddExpense(){
+    void shouldAddExpense() {
         Expense expense = new Expense(
                 1L,
                 "Mercadona",
                 new BigDecimal("20.50"),
                 Category.FOOD,
-                LocalDate.of(2026,8,26)
+                LocalDate.of(2026, 9, 1)
         );
 
-        service.addExpense(expense);
 
-        assertEquals(1, service.getAllExpenses().size());
-        assertEquals(expense, service.getAllExpenses().get(0));
+        when(repository.save(expense))
+                .thenReturn(expense);
+
+        Expense result = service.addExpense(expense);
+
+
+        assertSame(expense, result);
+
+        verify(repository).save(expense);
     }
+
+
     @Test
-    void shouldFindExpenseById(){
+    void shouldFindExpenseById() {
         Expense expense = new Expense(
                 1L,
                 "Mercadona",
                 new BigDecimal("20.50"),
                 Category.FOOD,
-                LocalDate.of(2026,8,26)
+                LocalDate.of(2026, 8, 26)
         );
 
-        service.addExpense(expense);
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(expense));
+
         var result = service.findExpenseById(1L);
 
         assertTrue(result.isPresent());
-        assertEquals(1, result.get().id());
-
-
-
+        assertSame(expense, result.get());
     }
+
+
     @Test
     void shouldReturnEmptyWhenExpenseIdDoesNotExist() {
 
-        var result = service.findExpenseById(2);
+        when(repository.findById(2L))
+                .thenReturn(Optional.empty());
+
+        var result = service.findExpenseById(2L);
 
         assertTrue(result.isEmpty());
-
     }
+
+
     @Test
     void shouldDeleteExpenseWhenIdExists() {
 
-        Expense expense = new Expense(
-                1L,
-                "Mercadona",
-                new BigDecimal("20.50"),
-                Category.FOOD,
-                LocalDate.of(2026, 8, 26)
-        );
+        when(repository.existsById(1L))
+                .thenReturn(true);
 
-        service.addExpense(expense);
-
-        boolean deleted = service.deleteExpense(1);
-
+        boolean deleted = service.deleteExpense(1L);
 
         assertTrue(deleted);
-        assertTrue(service.getAllExpenses().isEmpty());
+
+        verify(repository).deleteById(1L);
     }
+
+
     @Test
     void shouldReturnFalseWhenDeletingNonExistingExpense() {
 
-        boolean deleted = service.deleteExpense(1);
+        when(repository.existsById(1L))
+                .thenReturn(false);
+
+        boolean deleted = service.deleteExpense(1L);
 
         assertFalse(deleted);
+
+        verify(repository, never()).deleteById(1L);
     }
+
+
     @Test
-    void shouldReturnChosenCategory(){
-        Expense expense = new Expense(
+    void shouldReturnExpensesByCategory() {
+        Expense expense1 = new Expense(
                 1L,
                 "Mercadona",
                 new BigDecimal("20.50"),
@@ -104,31 +124,21 @@ class ExpenseServiceTest {
                 Category.FOOD,
                 LocalDate.of(2026, 9, 12)
         );
-        Expense expense3 = new Expense(
-                3L,
-                "Bus",
-                new BigDecimal("3.50"),
-                Category.TRANSPORT,
-                LocalDate.of(2026, 9, 26)
-        );
-        service.addExpense(expense);
-        service.addExpense(expense2);
-        service.addExpense(expense3);
 
-        var category = service.getExpensesByCategory(Category.FOOD);
+        when(repository.findByCategory(Category.FOOD))
+                .thenReturn(List.of(expense1, expense2));
 
+        var result = service.getExpensesByCategory(Category.FOOD);
 
-        assertEquals(2, category.size());
-
-        assertTrue(category.contains(expense));
-        assertTrue(category.contains(expense2));
-        assertFalse(category.contains(expense3));
+        assertEquals(2, result.size());
+        assertTrue(result.contains(expense1));
+        assertTrue(result.contains(expense2));
     }
+
 
     @Test
     void shouldReturnTotalSpent() {
-
-        Expense expense = new Expense(
+        Expense expense1 = new Expense(
                 1L,
                 "Mercadona",
                 new BigDecimal("20.50"),
@@ -143,6 +153,7 @@ class ExpenseServiceTest {
                 Category.FOOD,
                 LocalDate.of(2026, 9, 12)
         );
+
         Expense expense3 = new Expense(
                 3L,
                 "Bus",
@@ -150,42 +161,24 @@ class ExpenseServiceTest {
                 Category.TRANSPORT,
                 LocalDate.of(2026, 9, 26)
         );
-        service.addExpense(expense);
-        service.addExpense(expense2);
-        service.addExpense(expense3);
+
+        when(repository.findAll())
+                .thenReturn(List.of(expense1, expense2, expense3));
 
         var result = service.getTotalSpent();
 
-        // comprueba que da 49.50
         assertEquals(new BigDecimal("49.50"), result);
     }
 
+
     @Test
     void shouldReturnZeroWhenThereAreNoExpenses() {
+
+        when(repository.findAll())
+                .thenReturn(List.of());
+
         var result = service.getTotalSpent();
 
         assertEquals(BigDecimal.ZERO, result);
-
-
     }
-    @Test
-    void shouldNotAllowModificationOfReturnedExpenses() {
-        Expense expense = new Expense(
-                1L,
-                "Mercadona",
-                new BigDecimal("20.50"),
-                Category.FOOD,
-                LocalDate.of(2026, 8, 26)
-        );
-
-        service.addExpense(expense);
-
-        var expenses = service.getAllExpenses();
-
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> expenses.clear()
-        );
-    }
-
 }
