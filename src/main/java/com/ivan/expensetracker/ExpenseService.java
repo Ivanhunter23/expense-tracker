@@ -1,58 +1,50 @@
 package com.ivan.expensetracker;
 
+import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
-
+@Service
 public class ExpenseService {
-    private final List<Expense> expenses = new ArrayList<>();
 
-    public void addExpense(Expense expense){
-        expenses.add(expense);
+    private final ExpenseRepository repository;
+
+    public ExpenseService(ExpenseRepository repository) {
+        this.repository = repository;
+    }
+
+    public Expense addExpense(Expense expense) {
+        return repository.save(expense);
     }
 
     public List<Expense> getAllExpenses() {
-        return List.copyOf(expenses);
+        return repository.findAll();
     }
 
-    public Optional <Expense> findExpenseById(long id) {
-        for(Expense expense : expenses){
-            if (expense.id() == id ){
-                return Optional.of(expense);
-            }
-        }
-        return Optional.empty();
+    public Optional<Expense> findExpenseById(long id) {
+        return repository.findById(id);
     }
 
     public boolean deleteExpense(long id) {
-        Optional<Expense> expense = findExpenseById(id);
-
-        if(expense.isPresent()){
-            expenses.remove(expense.get());
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
             return true;
         }
+
         return false;
     }
 
     public List<Expense> getExpensesByCategory(Category category) {
-    List<Expense> result = new ArrayList<>();
-
-        for(Expense expense : expenses){
-            if (expense.category() == category) {
-                result.add(expense);
-            }
-        }
-        return result;
+        return repository.findByCategory(category);
     }
+
     public BigDecimal getTotalSpent() {
-        BigDecimal total = BigDecimal.ZERO;
-
-        for (Expense expense : expenses){
-            total = total.add(expense.amount());
-
-        }
-        return total;
+        return repository.findAll()
+                .stream()
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
 
