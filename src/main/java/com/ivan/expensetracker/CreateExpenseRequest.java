@@ -13,6 +13,4 @@ public record CreateExpenseRequest(
         @NotNull Category category,
         @NotNull LocalDate date
 ) {
-
 }
-
