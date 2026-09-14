@@ -1,11 +1,11 @@
 package com.ivan.expensetracker;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/expenses")
@@ -30,8 +30,16 @@ public class ExpenseController {
 
     @PostMapping
     public ResponseEntity<Expense> createExpense(
-            @Valid @RequestBody Expense expense
+            @Valid @RequestBody CreateExpenseRequest request
     ) {
+        Expense expense = new Expense(
+                null,
+                request.description(),
+                request.amount(),
+                request.category(),
+                request.date()
+        );
+
         Expense savedExpense = expenseService.addExpense(expense);
 
         return ResponseEntity
