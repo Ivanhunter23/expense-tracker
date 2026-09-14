@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/expenses")
@@ -29,7 +30,7 @@ public class ExpenseController {
 
     @PostMapping
     public ResponseEntity<Expense> createExpense(
-            @RequestBody Expense expense
+            @Valid @RequestBody Expense expense
     ) {
         Expense savedExpense = expenseService.addExpense(expense);
 
