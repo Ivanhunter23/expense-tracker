@@ -9,11 +9,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -60,7 +60,7 @@ class ExpenseControllerWebTest {
         when(expenseService.addExpense(any(Expense.class)))
                 .thenReturn(savedExpense);
 
-        String requestBody   =
+        String requestBody =
                 """
                         {
                           "description": "Cafe",
@@ -77,5 +77,24 @@ class ExpenseControllerWebTest {
                 .andExpect(jsonPath("$.id").value(300));
 
         verify(expenseService).addExpense(any(Expense.class));
+    }
+
+    @Test
+    void shouldReturnAllExpenses() throws Exception {
+        Expense expense = new Expense(
+                301L,
+                "Bus",
+                new BigDecimal("3.20"),
+                Category.TRANSPORT,
+                LocalDate.of(2026, 9, 15)
+        );
+        when(expenseService.getAllExpenses()).thenReturn(List.of(expense));
+
+        mockMvc.perform(get("/api/expenses"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(301));
+
+        verify(expenseService).getAllExpenses();
+
     }
 }
