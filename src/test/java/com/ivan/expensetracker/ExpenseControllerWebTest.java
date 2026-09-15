@@ -97,4 +97,28 @@ class ExpenseControllerWebTest {
         verify(expenseService).getAllExpenses();
 
     }
+
+    @Test
+    void shouldReturnExpensesFilteredByCategory() throws Exception {
+        Expense expense = new Expense(
+                302L,
+                "Lunch",
+                new BigDecimal("10.50"),
+                Category.FOOD,
+                LocalDate.of(2026, 9, 15)
+        );
+
+        when(expenseService.getExpensesByCategory(Category.FOOD))
+                .thenReturn(List.of(expense));
+
+        mockMvc.perform(
+                        get("/api/expenses")
+                                .param("category", "FOOD"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].category").value("FOOD"));
+
+        verify(expenseService).getExpensesByCategory(Category.FOOD);
+    }
+
+
 }
