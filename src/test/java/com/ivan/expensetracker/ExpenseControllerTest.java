@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 class ExpenseControllerTest {
@@ -23,14 +24,19 @@ class ExpenseControllerTest {
     @InjectMocks
     private ExpenseController controller;
 
-    Expense input = new Expense(null, "Cafe", new BigDecimal("2.50"), Category.FOOD, LocalDate.of(2026, 9, 13));
+    CreateExpenseRequest input = new CreateExpenseRequest(
+            "Cafe",
+            new BigDecimal("2.50"),
+            Category.FOOD,
+            LocalDate.of(2026, 9, 13)
+    );
 
     Expense savedExpense = new Expense(10L, "Cafe", new BigDecimal("2.50"), Category.FOOD, LocalDate.of(2026, 9, 13));
 
     @Test
     void shouldReturnCreatedExpense() {
 
-        when(expenseService.addExpense(input))
+        when(expenseService.addExpense(any(Expense.class)))
                 .thenReturn(savedExpense);
 
         ResponseEntity<Expense> response =
@@ -38,7 +44,7 @@ class ExpenseControllerTest {
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertSame(savedExpense, response.getBody());
-        verify(expenseService).addExpense(input);
+        verify(expenseService).addExpense(any(Expense.class));
     }
 
     @Test
