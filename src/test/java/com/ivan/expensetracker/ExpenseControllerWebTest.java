@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -118,6 +119,44 @@ class ExpenseControllerWebTest {
                 .andExpect(jsonPath("$[0].category").value("FOOD"));
 
         verify(expenseService).getExpensesByCategory(Category.FOOD);
+    }
+    @Test
+    void shouldReturnExpenseByIdWhenItExists() throws Exception {
+        Expense expense = new Expense(
+                303L,
+                "Medicine",
+                new BigDecimal("8.40"),
+                Category.HEALTH,
+                LocalDate.of(2026, 9, 16)
+        );
+
+        when(expenseService.findExpenseById(303))
+                .thenReturn(Optional.of(expense));
+
+        mockMvc.perform(get("/api/expenses/303"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(303))
+                .andExpect(jsonPath("$.description").value("Medicine"));
+
+        verify(expenseService).findExpenseById(303);
+    }
+    @Test
+    void shouldReturnNotFoundWhenExpenseDoesNotExist() throws Exception {
+        Expense expense = new Expense(
+                555L,
+                "Food",
+                new BigDecimal("8.20"),
+                Category.FOOD,
+                LocalDate.of(2026, 11, 25)
+        );
+
+        when(expenseService.findExpenseById(999))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/expenses/999"))
+                .andExpect(status().isNotFound());
+
+        verify(expenseService).findExpenseById(999);
     }
 
 
