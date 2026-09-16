@@ -9,11 +9,15 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -60,7 +64,7 @@ class ExpenseControllerWebTest {
         when(expenseService.addExpense(any(Expense.class)))
                 .thenReturn(savedExpense);
 
-        String requestBody   =
+        String requestBody =
                 """
                         {
                           "description": "Cafe",
@@ -77,5 +81,99 @@ class ExpenseControllerWebTest {
                 .andExpect(jsonPath("$.id").value(300));
 
         verify(expenseService).addExpense(any(Expense.class));
+    }
+
+    @Test
+    void shouldReturnAllExpenses() throws Exception {
+        Expense expense = new Expense(
+                301L,
+                "Bus",
+                new BigDecimal("3.20"),
+                Category.TRANSPORT,
+                LocalDate.of(2026, 9, 15)
+        );
+        when(expenseService.getAllExpenses()).thenReturn(List.of(expense));
+
+        mockMvc.perform(get("/api/expenses"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(301));
+
+        verify(expenseService).getAllExpenses();
+
+    }
+
+    @Test
+    void shouldReturnExpensesFilteredByCategory() throws Exception {
+        Expense expense = new Expense(
+                302L,
+                "Lunch",
+                new BigDecimal("10.50"),
+                Category.FOOD,
+                LocalDate.of(2026, 9, 15)
+        );
+
+        when(expenseService.getExpensesByCategory(Category.FOOD))
+                .thenReturn(List.of(expense));
+
+        mockMvc.perform(
+                        get("/api/expenses")
+                                .param("category", "FOOD"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].category").value("FOOD"));
+
+        verify(expenseService).getExpensesByCategory(Category.FOOD);
+    }
+    @Test
+    void shouldReturnExpenseByIdWhenItExists() throws Exception {
+        Expense expense = new Expense(
+                303L,
+                "Medicine",
+                new BigDecimal("8.40"),
+                Category.HEALTH,
+                LocalDate.of(2026, 9, 16)
+        );
+
+        when(expenseService.findExpenseById(303))
+                .thenReturn(Optional.of(expense));
+
+        mockMvc.perform(get("/api/expenses/303"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(303))
+                .andExpect(jsonPath("$.description").value("Medicine"));
+
+        verify(expenseService).findExpenseById(303);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenExpenseDoesNotExist() throws Exception {
+        when(expenseService.findExpenseById(999))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/expenses/999"))
+                .andExpect(status().isNotFound());
+
+        verify(expenseService).findExpenseById(999);
+    }
+
+    @Test
+    void shouldDeleteExistingExpense() throws Exception {
+        when(expenseService.deleteExpense(303))
+                .thenReturn(true);
+
+        mockMvc.perform(delete("/api/expenses/303"))
+                .andExpect(status().isNoContent());
+
+        verify(expenseService).deleteExpense(303);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenDeletingMissingExpense() throws Exception {
+        when(expenseService.deleteExpense(999))
+                .thenReturn(false);
+
+        mockMvc.perform(delete("/api/expenses/999"))
+                .andExpect(status().isNotFound());
+
+        verify(expenseService).deleteExpense(999);
     }
 }
