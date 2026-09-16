@@ -13,7 +13,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -140,16 +143,9 @@ class ExpenseControllerWebTest {
 
         verify(expenseService).findExpenseById(303);
     }
+
     @Test
     void shouldReturnNotFoundWhenExpenseDoesNotExist() throws Exception {
-        Expense expense = new Expense(
-                555L,
-                "Food",
-                new BigDecimal("8.20"),
-                Category.FOOD,
-                LocalDate.of(2026, 11, 25)
-        );
-
         when(expenseService.findExpenseById(999))
                 .thenReturn(Optional.empty());
 
@@ -159,5 +155,25 @@ class ExpenseControllerWebTest {
         verify(expenseService).findExpenseById(999);
     }
 
+    @Test
+    void shouldDeleteExistingExpense() throws Exception {
+        when(expenseService.deleteExpense(303))
+                .thenReturn(true);
 
+        mockMvc.perform(delete("/api/expenses/303"))
+                .andExpect(status().isNoContent());
+
+        verify(expenseService).deleteExpense(303);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenDeletingMissingExpense() throws Exception {
+        when(expenseService.deleteExpense(999))
+                .thenReturn(false);
+
+        mockMvc.perform(delete("/api/expenses/999"))
+                .andExpect(status().isNotFound());
+
+        verify(expenseService).deleteExpense(999);
+    }
 }
