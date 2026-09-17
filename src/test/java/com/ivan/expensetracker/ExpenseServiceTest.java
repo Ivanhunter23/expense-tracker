@@ -181,4 +181,59 @@ class ExpenseServiceTest {
 
         assertEquals(BigDecimal.ZERO, result);
     }
+
+    @Test
+    void shouldNotUpdateMissingExpense() {
+        Expense replacement = new Expense(
+                null,
+                "Mercadona",
+                new BigDecimal("20.50"),
+                Category.FOOD,
+                LocalDate.of(2026, 8, 26)
+        );
+
+        when(repository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        var result = service.updateExpense(999L, replacement);
+
+        assertTrue(result.isEmpty());
+        verify(repository).findById(999L);
+        verify(repository, never()).save(any(Expense.class));
+    }
+
+    @Test
+    void shouldUpdateExistingExpense() {
+        Expense existing = new Expense(
+                303L,
+                "Bus",
+                new BigDecimal("20.50"),
+                Category.TRANSPORT,
+                LocalDate.of(2026, 8, 26)
+        );
+        Expense replacement = new Expense(
+                null,
+                "Train",
+                new BigDecimal("28.50"),
+                Category.TRANSPORT,
+                LocalDate.of(2026, 8, 26)
+        );
+        Expense saved = new Expense(
+                303L,
+                "Train",
+                new BigDecimal("28.50"),
+                Category.TRANSPORT,
+                LocalDate.of(2026, 8, 26)
+        );
+
+        when(repository.findById(303L))
+                .thenReturn(Optional.of(existing));
+        when(repository.save(any(Expense.class))).thenReturn(saved);
+
+        Optional<Expense> result = service.updateExpense(303L, replacement);
+
+        assertSame(saved, result.get());
+        verify(repository).findById(303L);
+        verify(repository).save(any(Expense.class));
+    }
 }
