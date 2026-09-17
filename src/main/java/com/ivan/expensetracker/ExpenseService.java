@@ -47,5 +47,14 @@ public class ExpenseService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-
+    public Optional<Expense> updateExpense(long id, Expense replacement) {
+        return repository.findById(id)
+                .map(existing -> repository.save(new Expense(
+                        existing.getId(),
+                        replacement.getDescription(),
+                        replacement.getAmount(),
+                        replacement.getCategory(),
+                        replacement.getDate()
+                )));
+    }
 }
