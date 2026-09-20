@@ -13,12 +13,15 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -175,5 +178,64 @@ class ExpenseControllerWebTest {
                 .andExpect(status().isNotFound());
 
         verify(expenseService).deleteExpense(999);
+    }
+
+    @Test
+    void shouldUpdateExistingExpense() throws Exception {
+        Expense updated = new Expense(
+                303L,
+                "Train",
+                new BigDecimal("20.50"),
+                Category.TRANSPORT,
+                LocalDate.of(2026, 8, 26)
+        );
+
+        String requestBody =
+                """
+                        {
+                          "description": "Train",
+                          "amount": 20.50,
+                          "category": "TRANSPORT",
+                          "date": "2026-08-26"
+                        }
+                        """;
+
+        when(expenseService.updateExpense(eq(303L), any(Expense.class)))
+                .thenReturn(Optional.of(updated));
+
+        mockMvc.perform(
+                        put("/api/expenses/303")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestBody))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(303))
+                .andExpect(jsonPath("$.description").value("Train"));
+
+        verify(expenseService).updateExpense(eq(303L), any(Expense.class));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingMissingExpense() throws Exception {
+        String requestBody =
+                """
+                        {
+                          "description": "Taxi",
+                          "amount": 25.50,
+                          "category": "TRANSPORT",
+                          "date": "2026-08-26"
+                        }
+                        """;
+
+        when(expenseService.updateExpense(eq(999L), any(Expense.class)))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(
+                        put("/api/expenses/999")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestBody))
+                .andExpect(status().isNotFound());
+
+        verify(expenseService).updateExpense(eq(999L), any(Expense.class));
     }
 }

@@ -67,4 +67,22 @@ public class ExpenseController {
         return ResponseEntity.notFound().build();
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Expense> putExpense(
+            @PathVariable long id,
+            @Valid @RequestBody CreateExpenseRequest request
+    ) {
+        Expense expense = new Expense(
+                null,
+                request.description(),
+                request.amount(),
+                request.category(),
+                request.date()
+        );
+
+        return expenseService.updateExpense(id, expense)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
 }
