@@ -24,6 +24,9 @@ class ExpenseRepositoryIntegrationTest {
     @Autowired
     private ExpenseRepository repository;
 
+    @Autowired
+    private ExpenseService service;
+
     @Container
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16");
 
@@ -55,5 +58,33 @@ class ExpenseRepositoryIntegrationTest {
         assertEquals(1, results.size());
         assertEquals(saved.getId(), results.get(0).getId());
         assertEquals("Bici", results.get(0).getDescription());
+    }
+
+    @Test
+    void shouldUpdateExpenseInPostgres() {
+        Expense original = repository.save(new Expense(
+                null,
+                "Medico",
+                new BigDecimal("200"),
+                Category.HEALTH,
+                LocalDate.of(2026, 9, 29)
+        ));
+
+        Expense replacement = new Expense(
+                null,
+                "Dentista",
+                new BigDecimal("250"),
+                Category.HEALTH,
+                LocalDate.of(2026, 9, 29)
+        );
+
+        var result = service.updateExpense(original.getId(), replacement);
+
+        Expense reloaded = repository.findById(original.getId()).orElseThrow();
+
+        assertTrue(result.isPresent());
+        assertEquals(original.getId(), reloaded.getId());
+        assertEquals(replacement.getDescription(), reloaded.getDescription());
+        assertEquals(0, replacement.getAmount().compareTo(reloaded.getAmount()));
     }
 }
