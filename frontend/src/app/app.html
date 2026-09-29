@@ -186,8 +186,24 @@
 
 <main class="main">
       <h1>{{ title() }}</h1>
+  <form action="">
+    <label>Description <input name="description" required></label>
+    <label>Amount <input name="Amount" type="number" min="0.01" step="0.01" required></label>
+    <label>Category
+      <select name="Category" id="">
+        <option value="FOOD">Comida</option>
+        <option value="TRANSPORT">Transporte</option>
+        <option value="ENTERTAINMENT">Entretenimiento</option>
+        <option value="HEALTH">Salud</option>
+        <option value="UTILITIES">Utilidades</option>
+        <option value="OTHER">Otros</option>
+      </select>
+    </label>
+    <label>Date <input name="date" type="date" required></label>
+
+  </form>
   @for (expense of expenses(); track expense.id) {
-    <p>{{ expense.description }} — {{ expense.amount }} € - {{ expense.category}} </p>
+    <p>{{ expense.description }} — {{ expense.amount | number: '1.2-2' }} € - {{ expense.category}} </p>
   }
 
 </main>
