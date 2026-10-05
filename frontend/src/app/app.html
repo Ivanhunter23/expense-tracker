@@ -186,11 +186,14 @@
 
 <main class="main">
       <h1>{{ title() }}</h1>
-  <form action="">
+  <p>Total general: {{ total() | number: '1.2-2' }} €</p>
+  <form (submit)="onSubmit($event)">
+    <button type="submit">Guardar</button>
+
     <label>Description <input name="description" required></label>
-    <label>Amount <input name="Amount" type="number" min="0.01" step="0.01" required></label>
+    <label>Amount <input name="amount" type="number" min="0.01" step="0.01" required></label>
     <label>Category
-      <select name="Category" id="">
+      <select name="category" required>
         <option value="FOOD">Comida</option>
         <option value="TRANSPORT">Transporte</option>
         <option value="ENTERTAINMENT">Entretenimiento</option>
@@ -202,8 +205,47 @@
     <label>Date <input name="date" type="date" required></label>
 
   </form>
+  @if (errorMessage()){
+  <p> {{ errorMessage() }} </p>
+  }
+  <label>Filtrar por categoría
+    <select (change)="onFilterChange($event)">
+      <option value="">Todas</option>
+      <option value="FOOD">Comida</option>
+      <option value="TRANSPORT">Transporte</option>
+      <option value="ENTERTAINMENT">Entretenimiento</option>
+      <option value="HEALTH">Salud</option>
+      <option value="UTILITIES">Utilidades</option>
+      <option value="OTHER">Otros</option>
+    </select>
+  </label>
   @for (expense of expenses(); track expense.id) {
     <p>{{ expense.description }} — {{ expense.amount | number: '1.2-2' }} € - {{ expense.category}} </p>
+  <button type="button" (click)="deleteExpense(expense.id)">Eliminar</button>
+  <button type="button" (click)="startEditing(expense)">Editar</button>
+
+  @if (editingExpense()?.id === expense.id) {
+    <form (submit)="onEditSubmit($event, expense.id)">
+      <fieldset>
+        <legend>Editar {{ expense.description }}</legend>
+        <label>Description <input name="description" [value]="expense.description" required></label>
+        <label>Amount <input name="amount" type="number" min="0.01" step="0.01" [value]="expense.amount" required></label>
+        <label>Category
+          <select name="category" [value]="expense.category" required>
+            <option value="FOOD">Comida</option>
+            <option value="TRANSPORT">Transporte</option>
+            <option value="ENTERTAINMENT">Entretenimiento</option>
+            <option value="HEALTH">Salud</option>
+            <option value="UTILITIES">Utilidades</option>
+            <option value="OTHER">Otros</option>
+          </select>
+        </label>
+        <label>Date <input name="date" type="date" [value]="expense.date" required></label>
+        <button type="submit">Guardar cambios</button>
+        <button type="button" (click)="cancelEditing()">Cancelar</button>
+      </fieldset>
+    </form>
+  }
   }
 
 </main>
